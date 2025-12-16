@@ -33,6 +33,13 @@ dependencies = [
 ]
 ```
 
+## Changes
+
+### 0.1.10
+
+Fixes:
+- Added check to make sure nomad-camels-toolbox actually returns plots before trying to plot them. Now CAMELS files without plots using the legacy data saving (suitcase-nomad-camels-hdf5 < 1.0.0) work. 
+
 ## Main contributors
 | Name | E-mail     |
 |------|------------|
