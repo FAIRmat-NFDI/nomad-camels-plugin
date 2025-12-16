@@ -449,10 +449,11 @@ class CamelsParser(MatchingParser):
             data.hdf5_file = f'{path_in_filesystem}#/{self.camels_entry_name}/data'
         plots_from_hdf5 = nct.recreate_plots(mainfile, show_figures=False)
         # plot_from_hdf5 = plots_from_hdf5[list(plots_from_hdf5.keys())[0]]
-        for plot_from_hdf5 in plots_from_hdf5.values():
-            data.figures.append(PlotlyFigure(figure=plot_from_hdf5.to_plotly_json()))
+        if isinstance(plots_from_hdf5, list) and plots_from_hdf5:
+            for plot_from_hdf5 in plots_from_hdf5.values():
+                data.figures.append(PlotlyFigure(figure=plot_from_hdf5.to_plotly_json()))
         # -------------------------------
-        # This adds all the data to the .nxs file itself, uncomment if you dont want to have two seperate files.
+        # This adds all the data to the .h5 file itself, uncomment if you dont want to have two seperate files.
         # self.archive.data = data
         # -------------------------------
 
