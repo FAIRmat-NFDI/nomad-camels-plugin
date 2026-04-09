@@ -29,7 +29,7 @@ You should add the `nomad-camels-plugin` to your `nomad.yaml` dependencies(or `p
 
 ```yaml
 dependencies = [
-  "nomad-camels-plugin==0.1.8",
+  "nomad-camels-plugin==0.1.10",
 ]
 ```
 
@@ -38,7 +38,8 @@ dependencies = [
 ### 0.1.10
 
 Fixes:
-- Added check to make sure nomad-camels-toolbox actually returns plots before trying to plot them. Now CAMELS files without plots using the legacy data saving (suitcase-nomad-camels-hdf5 < 1.0.0) work. 
+- Now recursively goes through the instrument settings. This allows deeply nested insturment settings.
+- Added check to make sure nomad-camels-toolbox actually returns plots before trying to plot them. Now CAMELS files without plots using the legacy data saving (suitcase-nomad-camels-hdf5 < 1.0.0) work.
 
 ## Main contributors
 | Name | E-mail     |
