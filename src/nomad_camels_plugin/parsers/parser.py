@@ -34,6 +34,45 @@ from nomad_camels_plugin.schema_packages.camels_package import (
 from .utils import create_archive
 
 
+def extract_h5_data(item):
+    """Recursively parses an h5py Group or extracts an h5py Dataset."""
+    if isinstance(item, h5py.Group):
+        # If it's a group, recurse into its keys to build a nested dictionary
+        result = {}
+        for key in item.keys():
+            result[key] = extract_h5_data(item[key])
+        return result
+    else:
+        # If it's a dataset, extract the value using [()]
+        val = item[()]
+
+        # Convert numpy scalar to Python type if needed
+        if hasattr(val, 'shape') and val.shape == ():
+            val = val.item()
+
+        # If we have a list or array, decode each element if needed
+        if isinstance(val, np.ndarray):
+            if val.size == 1:
+                val = val.item()
+                if isinstance(val, bytes):
+                    val = val.decode('utf-8')
+                val = try_convert_to_number(val)
+            else:
+                decoded_list = []
+                for v in val:
+                    if isinstance(v, bytes):
+                        v = v.decode('utf-8')
+                    v = try_convert_to_number(v)
+                    decoded_list.append(v)
+                val = decoded_list if len(decoded_list) > 1 else decoded_list[0]
+        else:
+            if isinstance(val, bytes):
+                val = val.decode('utf-8')
+            val = try_convert_to_number(val)
+
+        return val
+
+
 class CamelsParser(MatchingParser):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -289,77 +328,13 @@ class CamelsParser(MatchingParser):
 
             instruments = hdf5_file[self.camels_entry_name]['instruments'].keys()
             for instrument_name in instruments:
-                settings_dict[
+                # Grab the top level 'settings' group for this instrument
+                settings_group = hdf5_file[self.camels_entry_name]['instruments'][
                     instrument_name
-                ] = {}  # Initialize a dict for this instrument's settings
-                settings_keys = hdf5_file[self.camels_entry_name]['instruments'][
-                    instrument_name
-                ]['settings'].keys()
-                for key in settings_keys:
-                    # Check if the object is of kind group
-                    if isinstance(
-                        hdf5_file[self.camels_entry_name]['instruments'][
-                            instrument_name
-                        ]['settings'][key],
-                        h5py.Group,
-                    ):
-                        settings_dict[instrument_name][
-                            key
-                        ] = {}  # Initialize a dict for this key
-                        # Get each element in the group
-                        for sub_key in hdf5_file[self.camels_entry_name]['instruments'][
-                            instrument_name
-                        ]['settings'][key].keys():
-                            settings_value = hdf5_file[self.camels_entry_name][
-                                'instruments'
-                            ][instrument_name]['settings'][key][sub_key][()]
+                ]['settings']
 
-                            # Convert numpy scalar to Python type if needed
-                            if (
-                                hasattr(settings_value, 'shape')
-                                and settings_value.shape == ()
-                            ):
-                                settings_value = settings_value.item()
-
-                            # If we have a list or array, decode each element if needed
-                            if isinstance(settings_value, np.ndarray):
-                                # If it's a single-element array
-                                if settings_value.size == 1:
-                                    settings_value = settings_value.item()
-                                else:
-                                    # Handle multi-element arrays here
-                                    decoded_list = []
-                                    for val in settings_value:
-                                        if isinstance(val, bytes):
-                                            val = val.decode('utf-8')
-                                        val = try_convert_to_number(val)
-                                        decoded_list.append(val)
-                                    settings_value = (
-                                        decoded_list
-                                        if len(decoded_list) > 1
-                                        else decoded_list[0]
-                                    )
-                            else:
-                                # If it's already a Python type, just continue
-                                # This includes the later logic you have for single values
-                                if isinstance(settings_value, bytes):
-                                    settings_value = settings_value.decode('utf-8')
-                                settings_value = try_convert_to_number(settings_value)
-
-                            settings_dict[instrument_name][key][sub_key] = (
-                                settings_value
-                            )
-                    else:
-                        settings_value = hdf5_file[self.camels_entry_name][
-                            'instruments'
-                        ][instrument_name]['settings'][key][()]
-                        # Decode if bytes
-                        if isinstance(settings_value, bytes):
-                            settings_value = settings_value.decode('utf-8')
-                        # Try to convert to number if possible
-                        settings_value = try_convert_to_number(settings_value)
-
-                        settings_dict[instrument_name][key] = settings_value
+                # Recursively parse the entire settings tree
+                settings_dict[instrument_name] = extract_h5_data(settings_group)
 
             # Convert the entire dictionary to a JSON string
             def ensure_str(obj):
