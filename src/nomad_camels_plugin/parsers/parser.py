@@ -919,8 +919,8 @@ class CamelsParserDiode(CamelsParser):
                 data.camels_python_script = python_script_bytes.decode('utf-8')
             except KeyError:
                 logger.warning('No python script found in the CAMELS file')
-
-            data.hdf5_file = f'CAMELS_data/{sample_name}/{self._fname}#/{self.camels_entry_name}/data'
+            path_in_filesystem = mainfile.split('/raw/')[1]
+            data.hdf5_file = f'{path_in_filesystem}#/{self.camels_entry_name}/data'
         plots_from_hdf5 = nct.recreate_plots(mainfile, show_figures=False)
         for plot_from_hdf5 in plots_from_hdf5.values():
             x_data = np.array(plot_from_hdf5['data'][0]['x'])
