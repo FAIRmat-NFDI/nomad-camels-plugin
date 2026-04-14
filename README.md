@@ -35,6 +35,10 @@ dependencies = [
 
 ## Changes
 
+### 0.1.11
+Fixes:
+- The CamelsParserDiode now correctly extracts the HDF5 file path.
+
 ### 0.1.10
 
 Fixes:
